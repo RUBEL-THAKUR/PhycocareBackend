@@ -1,0 +1,365 @@
+{
+  "info": {
+    "name": "PsychoCare API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8081" },
+    { "key": "user_token", "value": "" },
+    { "key": "therapist_token", "value": "" },
+    { "key": "admin_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth - User",
+      "item": [
+        {
+          "name": "User Signup",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/signup",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstName\":\"Rubel\",\"lastName\":\"Singh\",\"emailId\":\"rubel@test.com\",\"mobileNumber\":\"9999999999\",\"username\":\"rubelsingh\",\"password\":\"Test@1234\"}"
+            }
+          }
+        },
+        {
+          "name": "User Login",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.environment.set('user_token', pm.response.json().data.token);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"emailId\":\"user@psychocare.com\",\"password\":\"User@1234\"}"
+            }
+          }
+        },
+        {
+          "name": "Request OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/request-otp",
+            "body": { "mode": "raw", "raw": "{\"identifier\":\"user@psychocare.com\"}" }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/verify-otp",
+            "body": { "mode": "raw", "raw": "{\"identifier\":\"user@psychocare.com\",\"otp\":\"123456\"}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "url": "{{base_url}}/api/user/profile"
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/profile",
+            "body": { "mode": "raw", "raw": "{\"firstName\":\"Rubel\",\"lastName\":\"Singh\",\"gender\":\"Male\",\"timezone\":\"Asia/Kolkata\"}" }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/change-password",
+            "body": { "mode": "raw", "raw": "{\"newPassword\":\"NewPass@123\",\"confirmPassword\":\"NewPass@123\"}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Wallet",
+      "item": [
+        {
+          "name": "Get Wallet",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "url": "{{base_url}}/api/user/wallet"
+          }
+        },
+        {
+          "name": "Add Money",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/wallet/add",
+            "body": { "mode": "raw", "raw": "{\"amount\":500,\"paymentMethod\":\"UPI\",\"referenceId\":\"TXN123456\"}" }
+          }
+        },
+        {
+          "name": "Get Transactions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "url": { "raw": "{{base_url}}/api/user/wallet/transactions?page=0&size=10", "query": [{ "key": "page", "value": "0" }, { "key": "size", "value": "10" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Sessions",
+      "item": [
+        {
+          "name": "Book Session",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/sessions/book",
+            "body": { "mode": "raw", "raw": "{\"therapistId\":\"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\"mode\":\"CHAT\",\"scheduledAt\":\"2025-12-01T10:00:00\",\"durationMinutes\":60}" }
+          }
+        },
+        {
+          "name": "Get My Sessions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "url": { "raw": "{{base_url}}/api/user/sessions?page=0&size=10", "query": [{ "key": "page", "value": "0" }, { "key": "size", "value": "10" }] }
+          }
+        },
+        {
+          "name": "Get Sessions by Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "url": { "raw": "{{base_url}}/api/user/sessions?status=UPCOMING", "query": [{ "key": "status", "value": "UPCOMING" }] }
+          }
+        },
+        {
+          "name": "Cancel Session",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }],
+            "url": { "raw": "{{base_url}}/api/user/sessions/1/cancel?reason=Personal%20emergency", "query": [{ "key": "reason", "value": "Personal emergency" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Feedback",
+      "item": [
+        {
+          "name": "Submit Feedback",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/feedback",
+            "body": { "mode": "raw", "raw": "{\"qualityRating\":5,\"helpfulnessRating\":4,\"clarityRating\":5,\"source\":\"Google\",\"comment\":\"Great platform!\",\"isAnonymous\":false}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Messages",
+      "item": [
+        {
+          "name": "Compose Message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/messages/compose",
+            "body": { "mode": "raw", "raw": "{\"recipientEmail\":\"support@psychocare.com\",\"subject\":\"Help needed\",\"body\":\"I need help with my session booking.\"}" }
+          }
+        },
+        { "name": "Get Inbox", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/messages/inbox" } },
+        { "name": "Get Sent", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/messages/sent" } },
+        { "name": "Get Starred", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/messages/starred" } },
+        { "name": "Get Important", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/messages/important" } },
+        { "name": "Get Trash", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/messages/trash" } },
+        { "name": "Toggle Star", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/messages/1/star" } },
+        { "name": "Delete Message", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/messages/1" } }
+      ]
+    },
+    {
+      "name": "User - Assessments",
+      "item": [
+        {
+          "name": "Submit Assessment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/assessments",
+            "body": { "mode": "raw", "raw": "{\"testName\":\"Anxiety Assessment\",\"testSlug\":\"anxiety\",\"score\":14,\"resultLabel\":\"Moderate Anxiety\",\"answers\":\"{\\\"q1\\\":2,\\\"q2\\\":3}\"}" }
+          }
+        },
+        { "name": "Get Completed Assessments", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/assessments/completed" } }
+      ]
+    },
+    {
+      "name": "User - Prescriptions",
+      "item": [
+        { "name": "Get My Prescriptions", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/prescriptions" } }
+      ]
+    },
+    {
+      "name": "User - Referrals",
+      "item": [
+        { "name": "Get My Referrals", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/referrals" } }
+      ]
+    },
+    {
+      "name": "User - Rewards",
+      "item": [
+        { "name": "Get Active Rewards", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/api/user/rewards" } }
+      ]
+    },
+    {
+      "name": "Therapist - Auth",
+      "item": [
+        {
+          "name": "Therapist Signup",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/therapist/signup",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "firstName", "value": "John", "type": "text" },
+                { "key": "lastName", "value": "Doe", "type": "text" },
+                { "key": "emailId", "value": "john.doe@example.com", "type": "text" },
+                { "key": "password", "value": "Test@1234", "type": "text" },
+                { "key": "mobileNumber", "value": "8888888888", "type": "text" },
+                { "key": "isAbove18", "value": "true", "type": "text" },
+                { "key": "acceptedTerms", "value": "true", "type": "text" },
+                { "key": "cv", "type": "file", "src": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Therapist Login",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.environment.set('therapist_token', pm.response.json().data.token);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/therapist/login",
+            "body": { "mode": "raw", "raw": "{\"emailId\":\"sakshi.kochhar@psychocare.com\",\"password\":\"Admin@1234\"}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Therapist - Profile",
+      "item": [
+        {
+          "name": "Save Basic Info",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/therapist/profile/basic-info",
+            "body": { "mode": "raw", "raw": "{\"prefix\":\"Dr.\",\"firstName\":\"Sakshi\",\"lastName\":\"Kochhar\",\"category\":\"Clinical Psychologist\",\"emailId\":\"sakshi@example.com\",\"mobile\":\"9876543210\",\"gender\":\"Female\",\"language\":\"English\",\"briefDescription\":\"Expert in anxiety and depression.\",\"presentAddress\":\"123 MG Road\",\"presentCity\":\"Delhi\",\"presentState\":\"Delhi\",\"presentCountry\":\"India\",\"presentPinCode\":\"110001\",\"sameAsPresentAddress\":true,\"timeZone\":\"Asia/Kolkata\",\"experience\":8,\"consultationFeeChat\":1200,\"consultationFeeAudio\":1400,\"consultationFeeVideo\":1500}" }
+          }
+        },
+        { "name": "Get Basic Info", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }], "url": "{{base_url}}/api/therapist/profile/basic-info" } },
+        {
+          "name": "Add Qualification",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/therapist/profile/qualifications",
+            "body": { "mode": "raw", "raw": "{\"degree\":\"PhD Clinical Psychology\",\"institution\":\"NIMHANS Bangalore\",\"passingYear\":2015,\"specialization\":\"Cognitive Behavioural Therapy\"}" }
+          }
+        },
+        { "name": "Get Qualifications", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }], "url": "{{base_url}}/api/therapist/profile/qualifications" } },
+        {
+          "name": "Add Experience",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/therapist/profile/experience",
+            "body": { "mode": "raw", "raw": "{\"organization\":\"AIIMS Delhi\",\"designation\":\"Senior Psychologist\",\"fromYear\":2016,\"isCurrent\":true}" }
+          }
+        },
+        {
+          "name": "Add Specialization",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/therapist/profile/specializations",
+            "body": { "mode": "raw", "raw": "{\"specializationName\":\"Anxiety Disorders\"}" }
+          }
+        },
+        {
+          "name": "Add Area of Expertise",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/therapist/profile/expertise",
+            "body": { "mode": "raw", "raw": "{\"areaName\":\"Cognitive Behavioural Therapy\"}" }
+          }
+        },
+        {
+          "name": "Save Bank Details",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/therapist/profile/bank-details",
+            "body": { "mode": "raw", "raw": "{\"accountHolderName\":\"Sakshi Kochhar\",\"accountNumber\":\"123456789012\",\"ifscCode\":\"HDFC0001234\",\"bankName\":\"HDFC Bank\",\"branchName\":\"Connaught Place\",\"upiId\":\"sakshi@hdfc\"}" }
+          }
+        },
+        { "name": "Get Therapist Sessions", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }], "url": "{{base_url}}/api/therapist/profile/sessions" } },
+        { "name": "Complete Session", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }], "url": "{{base_url}}/api/therapist/profile/sessions/1/complete" } },
+        {
+          "name": "Create Prescription",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{therapist_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/therapist/profile/prescriptions",
+            "body": { "mode": "raw", "raw": "{\"sessionId\":1,\"notes\":\"Patient showing improvement. Continue CBT exercises.\",\"medications\":\"None prescribed.\",\"followUpDate\":\"2025-12-15T10:00:00\"}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public - Therapists",
+      "item": [
+        { "name": "List All Approved Therapists", "request": { "method": "GET", "url": "{{base_url}}/api/therapists/public" } },
+        { "name": "Search Therapists", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/therapists/public?search=anxiety", "query": [{ "key": "search", "value": "anxiety" }] } } },
+        { "name": "Get Therapist by ID", "request": { "method": "GET", "url": "{{base_url}}/api/therapists/public/a1b2c3d4-e5f6-7890-abcd-ef1234567890" } }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.environment.set('admin_token', pm.response.json().data.token);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/admin/auth/login",
+            "body": { "mode": "raw", "raw": "{\"email\":\"admin@psychocare.com\",\"password\":\"Admin@1234\"}" }
+          }
+        },
+        { "name": "Get Stats", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/api/admin/stats" } },
+        { "name": "Get All Therapists", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/api/admin/therapists" } },
+        { "name": "Get Pending Therapists", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": { "raw": "{{base_url}}/api/admin/therapists?status=PENDING", "query": [{ "key": "status", "value": "PENDING" }] } } },
+        { "name": "Approve Therapist", "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/api/admin/therapists/a1b2c3d4-e5f6-7890-abcd-ef1234567890/approve" } },
+        { "name": "Reject Therapist", "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": { "raw": "{{base_url}}/api/admin/therapists/a1b2c3d4-e5f6-7890-abcd-ef1234567890/reject?reason=Incomplete+credentials", "query": [{ "key": "reason", "value": "Incomplete credentials" }] } } },
+        { "name": "Get All Users", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/api/admin/users" } }
+      ]
+    }
+  ]
+}
