@@ -95,11 +95,25 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
-    // ✅ Cloudinary — CV aur profile image cloud pe store karne ke liye
+    // Cloudinary
     implementation 'com.cloudinary:cloudinary-http44:1.36.0'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
     onlyIf { System.getenv("RAILWAY_ENVIRONMENT") == null }
+}
+
+//////////////////////////////////////////////
+// 🔥 IMPORTANT FIX FOR RAILWAY (MUST)
+//////////////////////////////////////////////
+
+// ❌ Disable plain jar (problem wala)
+jar {
+    enabled = false
+}
+
+// ✅ Ensure executable jar
+bootJar {
+    archiveFileName = 'app.jar'
 }
