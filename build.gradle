@@ -101,4 +101,5 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    onlyIf { System.getenv("RAILWAY_ENVIRONMENT") == null }
 }
