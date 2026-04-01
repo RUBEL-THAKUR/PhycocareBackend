@@ -59,10 +59,19 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok(list));
     }
 
-    @GetMapping("/therapists/{id}")
-    public ResponseEntity<ApiResponse<Therapist>> getTherapist(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.ok(therapistService.getById(id)));
-    }
+//    @GetMapping("/therapists/{id}")
+//    public ResponseEntity<ApiResponse<Therapist>> getTherapist(@PathVariable UUID id) {
+//        return ResponseEntity.ok(ApiResponse.ok(therapistService.getById(id)));
+//    }
+@GetMapping("/therapists/{id}")
+public ResponseEntity<ApiResponse<Map<String, Object>>> getTherapist(@PathVariable UUID id) {
+    Therapist t = therapistService.getById(id);
+    Map<String, Object> data = new HashMap<>();
+    data.put("therapist", t);
+    data.put("cvUrl", "http://localhost:9090/api/therapist/cv/" + t.getCvFileName());
+    return ResponseEntity.ok(ApiResponse.ok(data));
+}
+
 
     @PutMapping("/therapists/{id}/approve")
     public ResponseEntity<ApiResponse<Therapist>> approveTherapist(@PathVariable UUID id) {

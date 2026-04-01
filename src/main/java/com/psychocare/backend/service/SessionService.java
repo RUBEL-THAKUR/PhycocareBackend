@@ -29,6 +29,10 @@ public class SessionService {
     private final TherapistService therapistService;
     private final UserService userService;
 
+    // ===============================
+    // BOOK SESSION
+    // ===============================
+
     @Transactional
     public Session bookSession(Long userId, BookSessionRequest request) {
         AppUser user = userService.getById(userId);
@@ -38,13 +42,11 @@ public class SessionService {
             throw new BadRequestException("Therapist is not available for booking");
         }
 
-        // Determine fee based on mode
         double fee = resolveFee(therapist.getId(), request.getMode(), therapist.getConsultationFee());
 
-        // Deduct from wallet
         userService.deductWallet(user, fee,
                 "Session booked with " + therapist.getFirstName() + " " + therapist.getLastName()
-                + " (" + request.getMode().name() + ")");
+                        + " (" + request.getMode().name() + ")");
 
         String roomId = "room-" + UUID.randomUUID().toString().substring(0, 8);
 
@@ -61,18 +63,23 @@ public class SessionService {
 
         Session saved = sessionRepository.save(session);
 
-        // Process referral credit if this is the user's first session
-        long totalSessions = sessionRepository.countByUser(userId);
+        long totalSessions = sessionRepository.countByUserUserId(userId);
         if (totalSessions == 1) {
             userService.processReferralCreditOnFirstSession(user);
         }
 
-        return saved;
+        // ✅ Re-fetch with associations so toResponse() won't hit lazy proxy issue
+        return sessionRepository.findWithAssociationsById(saved.getId())
+                .orElse(saved);
     }
+
+    // ===============================
+    // CANCEL SESSION (USER)
+    // ===============================
 
     @Transactional
     public Session cancelByUser(Long sessionId, Long userId, String reason) {
-        Session session = getById(sessionId);
+        Session session = getById(sessionId); // ✅ already uses findWithAssociationsById
 
         if (!session.getUser().getUserId().equals(userId)) {
             throw new BadRequestException("You are not authorized to cancel this session");
@@ -89,16 +96,19 @@ public class SessionService {
         session.setCancelledAt(LocalDateTime.now());
         sessionRepository.save(session);
 
-        // Refund wallet
         userService.refundWallet(session.getUser(), session.getAmountPaid(),
                 "Refund for cancelled session #" + sessionId);
 
         return session;
     }
 
+    // ===============================
+    // CANCEL SESSION (THERAPIST)
+    // ===============================
+
     @Transactional
     public Session cancelByTherapist(Long sessionId, UUID therapistId, String reason) {
-        Session session = getById(sessionId);
+        Session session = getById(sessionId); // ✅ already uses findWithAssociationsById
 
         if (!session.getTherapist().getId().equals(therapistId)) {
             throw new BadRequestException("You are not authorized to cancel this session");
@@ -112,48 +122,55 @@ public class SessionService {
         session.setCancelledAt(LocalDateTime.now());
         sessionRepository.save(session);
 
-        // Full refund to user
         userService.refundWallet(session.getUser(), session.getAmountPaid(),
                 "Refund - therapist cancelled session #" + sessionId);
 
         return session;
     }
 
+    // ===============================
+    // COMPLETE SESSION
+    // ===============================
+
     @Transactional
     public Session markCompleted(Long sessionId, UUID therapistId) {
-        Session session = getById(sessionId);
+        Session session = getById(sessionId); // ✅ already uses findWithAssociationsById
+
         if (!session.getTherapist().getId().equals(therapistId)) {
             throw new BadRequestException("Not authorized");
         }
+
         session.setStatus(SessionStatus.COMPLETED);
         session.setCompletedAt(LocalDateTime.now());
 
-        // Increment therapist total sessions
         Therapist therapist = session.getTherapist();
         therapist.setTotalSessions(therapist.getTotalSessions() + 1);
-        therapistService.getById(therapistId); // just to ensure it loads — save happens through cascade
 
         return sessionRepository.save(session);
     }
 
+    // ===============================
+    // GET COMPLETED SESSIONS COUNT
+    // ===============================
+
+    public long getCompletedSessions(UUID therapistId) {
+        return sessionRepository
+                .countByTherapistIdAndStatus(therapistId, SessionStatus.COMPLETED);
+    }
+
+    // ===============================
+    // GET SESSION BY ID
+    // ===============================
+
     public Session getById(Long sessionId) {
-        return sessionRepository.findById(sessionId)
+        // ✅ Uses eager-fetch query to avoid LazyInitializationException
+        return sessionRepository.findWithAssociationsById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with id: " + sessionId));
     }
 
-//    public Page<Session> getUserSessions(Long userId, SessionStatus status, Pageable pageable) {
-//        if (status != null) {
-//            return sessionRepository.findByUserUserIdAndStatus(userId, status, pageable);
-//        }
-//        return sessionRepository.findByUserUserId(userId, pageable);
-//    }
-//
-//    public Page<Session> getTherapistSessions(UUID therapistId, SessionStatus status, Pageable pageable) {
-//        if (status != null) {
-//            return sessionRepository.findByTherapistIdAndStatus(therapistId, status, pageable);
-//        }
-//        return sessionRepository.findByTherapistId(therapistId, pageable);
-//    }
+    // ===============================
+    // GET USER SESSIONS
+    // ===============================
 
     @Transactional(readOnly = true)
     public Page<SessionResponse> getUserSessions(Long userId, SessionStatus status, Pageable pageable) {
@@ -165,6 +182,10 @@ public class SessionService {
                 .map(this::toResponse);
     }
 
+    // ===============================
+    // GET THERAPIST SESSIONS
+    // ===============================
+
     @Transactional(readOnly = true)
     public Page<SessionResponse> getTherapistSessions(UUID therapistId, SessionStatus status, Pageable pageable) {
         if (status != null) {
@@ -175,7 +196,10 @@ public class SessionService {
                 .map(this::toResponse);
     }
 
-    // Runs every 15 minutes — marks sessions as EXPIRED if they are still UPCOMING past schedule + duration
+    // ===============================
+    // EXPIRE OLD SESSIONS (SCHEDULER)
+    // ===============================
+
     @Scheduled(fixedRate = 900000)
     @Transactional
     public void expireOldSessions() {
@@ -183,6 +207,7 @@ public class SessionService {
                 SessionStatus.UPCOMING,
                 LocalDateTime.now().minusHours(2)
         );
+
         for (Session session : upcoming) {
             session.setStatus(SessionStatus.EXPIRED);
             sessionRepository.save(session);
@@ -190,6 +215,11 @@ public class SessionService {
         }
     }
 
+    // ===============================
+    // DTO CONVERTER
+    // ===============================
+
+    @Transactional(readOnly = true) // ✅ Safety net if called outside an active transaction
     public SessionResponse toResponse(Session s) {
         return SessionResponse.builder()
                 .id(s.getId())
@@ -208,8 +238,13 @@ public class SessionService {
                 .build();
     }
 
+    // ===============================
+    // PRIVATE HELPERS
+    // ===============================
+
     private double resolveFee(UUID therapistId, SessionMode mode, Double fallback) {
         TherapistProfile profile = profileRepository.findByTherapistId(therapistId).orElse(null);
+
         if (profile != null) {
             return switch (mode) {
                 case CHAT -> profile.getConsultationFeeChat() != null ? profile.getConsultationFeeChat() : orFallback(fallback);
@@ -221,7 +256,8 @@ public class SessionService {
     }
 
     private double orFallback(Double fee) {
-        if (fee == null || fee <= 0) throw new BadRequestException("Therapist fee not configured for this session mode");
+        if (fee == null || fee <= 0)
+            throw new BadRequestException("Therapist fee not configured for this session mode");
         return fee;
     }
 }

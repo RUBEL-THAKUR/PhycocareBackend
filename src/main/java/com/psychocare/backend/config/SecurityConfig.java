@@ -51,18 +51,31 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints — no token required
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/therapist/signup",
-                                "/api/therapist/login",
-                                "/api/admin/auth/**",
-                                "/api/therapists/public/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/actuator/**",
-                                "/ws/**"
-                        ).permitAll()
+//                        .requestMatchers(
+//                                "/api/auth/**",
+//                                "/api/therapist/signup",
+//                                "/api/therapist/login",
+//                                "/api/admin/auth/**",
+//                                "/api/therapists/public/**",
+//                                "/swagger-ui/**",
+//                                "/swagger-ui.html",
+//                                "/v3/api-docs/**",
+//                                "/actuator/**",
+//                                "/ws/**"
+//                        ).permitAll()
+                                .requestMatchers(
+                                        "/api/auth/**",
+                                        "/api/therapist/signup",
+                                        "/api/therapist/login",
+                                        "/api/therapist/cv/**",
+                                        "/api/admin/auth/**",
+                                        "/api/therapists/public/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/v3/api-docs/**",
+                                        "/actuator/**",
+                                        "/ws/**"
+                                ).permitAll()
 
                         // Admin-only endpoints
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
