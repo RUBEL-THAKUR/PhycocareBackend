@@ -1,1 +1,1 @@
-web: ./gradlew build -x test --no-daemon && java -jar build/libs/*.jar
+web: ./gradlew build -x test --no-daemon && java -jar build/libs/*boot.jar
